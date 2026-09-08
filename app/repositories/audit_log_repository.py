@@ -1,30 +1,66 @@
-from datetime import datetime
-
-_logs: list[dict] = []
-_next_id = 1
-
+from app.core.database import get_connection
 
 def add(actor: str, action: str, resource: str) -> dict:
-    global _next_id
-
-    log = {
-        "id": _next_id,
-        "actor": actor,
-        "action": action,
-        "resource": resource,
-        "timestamp": datetime.now(),
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO audit_logs (actor, action, resource)
+        VALUES (%s,%s,%s)
+        RETURNING id, actor, action, resource, timestamp
+        """,
+        (actor, action, resource),
+    )
+    row = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {
+        "id": row[0],
+        "actor": row[1],
+        "action": row[2],
+        "resource": row[3],
+        "timestamp": row[4],
     }
-    _logs.append(log)
-    _next_id += 1
-    return log
 
 
 def get_all() -> list[dict]:
-    return _logs
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, actor, action, resource, timestamp FROM audit_logs ORDER BY id"
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [
+        {
+            "id": row[0],
+            "actor": row[1],
+            "action": row[2],
+            "resource": row[3],
+            "timestamp": row[4],
+        }
+        for row in rows
+    ]
 
 
 def get_by_id(log_id: int) -> dict | None:
-    for log in _logs:
-        if log["id"] == log_id:
-            return log
-    return None
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, actor, action, resource, timestamp FROM audit_logs WHERE id = %s",
+        (log_id,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if row is None:
+        return None
+    return {
+        "id": row[0],
+        "actor": row[1],
+        "action": row[2],
+        "resource": row[3],
+        "timestamp": row[4],
+    }
