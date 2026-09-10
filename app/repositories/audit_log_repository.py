@@ -24,12 +24,30 @@ def add(actor: str, action: str, resource: str) -> dict:
     }
 
 
-def get_all() -> list[dict]:
+def get_all(actor: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT id, actor, action, resource, timestamp FROM audit_logs ORDER BY id"
-    )
+    if actor is not None:
+        cur.execute(
+            """
+            SELECT id, actor, action, resource, timestamp
+            FROM audit_logs
+            WHERE actor = %s
+            ORDER BY id
+            LIMIT %s OFFSET %s
+            """,
+            (actor, limit, offset),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT id, actor, action, resource, timestamp
+            FROM audit_logs
+            ORDER BY id
+            LIMIT %s OFFSET %s
+            """,
+            (limit, offset),
+        )
     rows = cur.fetchall()
     cur.close()
     conn.close()

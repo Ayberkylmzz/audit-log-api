@@ -12,8 +12,8 @@ def create_log(data: AuditLogCreate):
 
 
 @router.get("", response_model=list[AuditLogRead])
-def list_logs():
-    return audit_log_service.list_logs()
+def list_logs(actor: str | None = None, limit: int = 50, offset: int = 0):
+    return audit_log_service.list_logs(actor=actor, limit=limit, offset=offset)
 
 
 @router.get("/{log_id}", response_model=AuditLogRead)
