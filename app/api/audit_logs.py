@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.security import verify_api_key
 from app.schemas.audit_log import AuditLogCreate, AuditLogRead
 from app.services import audit_log_service
 
-router = APIRouter(prefix="/logs", tags=["logs"])
+router = APIRouter(prefix="/logs", tags=["logs"], dependencies=[Depends(verify_api_key)])
 
 
 @router.post("", response_model=AuditLogRead, status_code=201)
